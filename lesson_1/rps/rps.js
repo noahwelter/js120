@@ -4,12 +4,27 @@ const RPSGame = {
   human: createHuman(),
   computer: createComputer(),
   winningScore: 5,
-  victoryTable: {
-    rock: ['lizard', 'scissors'],
-    paper: ['rock', 'spock'],
-    scissors: ['paper', 'lizard'],
-    lizard: ['spock', 'paper'],
-    spock: ['scissors', 'rock']
+  choiceTable: {
+    rock: {
+      beats: ['lizard', 'scissors'],
+      inputOptions: ['r', 'ro', 'rock'],
+    },
+    paper: {
+      beats: ['rock', 'spock'],
+      inputOptions: ['p', 'pa', 'paper'],
+    },
+    scissors: {
+      beats: ['paper', 'lizard'],
+      inputOptions: ['sc', 'scissors'],
+    },
+    lizard: {
+      beats: ['spock', 'paper'],
+      inputOptions: ['l', 'li', 'lizard'],
+    },
+    spock: {
+      beats: ['scissors', 'rock'],
+      inputOptions: ['sp', 'spock'],
+    },
   },
 
   displayWelcomeMessage() {
@@ -17,11 +32,11 @@ const RPSGame = {
     console.log(
       `╭──────────────────────────╮\n` +
       `│                          │\n` +
-      `│  ●                 Rock  |\n` +
-      `│    ■              Paper  |\n` +
-      `│      ✂         Scissors  |\n` +
-      `│        𓆈         Lizard  |\n` +
-      `│           𓂈       Spock  |\n` +
+      `│  ●                 Rock  │\n` +
+      `│    ■              Paper  │\n` +
+      `│      ✂         Scissors  │\n` +
+      `│        𓆈         Lizard  │\n` +
+      `│           𓂈       Spock  │\n` +
       `│                          │\n` +
       `╰──────────────────────────╯\n`
     );
@@ -29,7 +44,7 @@ const RPSGame = {
   },
 
   displayGoodbyeMessage() {
-    console.log('Thanks for playing ${}. Goodbye!');
+    console.log(`Thanks for playing. Goodbye!`);
   },
 
   getGameWinner() {
@@ -37,7 +52,7 @@ const RPSGame = {
       return null;
     }
 
-    if (this.victoryTable[this.human.move].includes(this.computer.move)) {
+    if (this.choiceTable[this.human.move].beats.includes(this.computer.move)) {
       return this.human;
     } else {
       return this.computer;
@@ -152,7 +167,7 @@ function createComputer() {
 
   let computerObject = {
     choose() {
-      const choices = Object.keys(RPSGame.victoryTable);
+      const choices = Object.keys(RPSGame.choiceTable);
       let randomIndex = Math.floor(Math.random() * choices.length);
       this.move = choices[randomIndex];
     },
@@ -169,15 +184,28 @@ function createHuman() {
       let choice;
 
       while (true) {
-        let choices = Object.keys(RPSGame.victoryTable);
+        let choices = Object.keys(RPSGame.choiceTable).map(choice => {
+          return `${choice[0]}\u0332${choice[1]}\u0332${choice.slice(2)}`;
+        });
         let choicesList = choices.join(', ').replace(/([^, ]*)$/, 'or $1');
+
         console.log(`Please choose ${choicesList}:`);
-        choice = readline.question();
-        if (Object.keys(RPSGame.victoryTable).includes(choice)) break;
+        choice = this.getChoiceFromShorthand(readline.question());
+
+        if (choice) break;
         console.log('Sorry, invalid choice.');
       }
 
       this.move = choice;
+    },
+
+    getChoiceFromShorthand(userChoice) {
+      for (validChoice in RPSGame.choiceTable) {
+        if (RPSGame.choiceTable[validChoice].inputOptions.includes(userChoice.toLowerCase()))
+          return validChoice;
+      }
+
+      return null;
     },
   };
 
