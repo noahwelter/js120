@@ -262,12 +262,12 @@ function createHuman() {
     choose() {
       let choicesList = this.accentTwoChars(Object.keys(RPSGame.choiceTable));
       let prompt = `Please choose ${choicesList}:`;
-      let inputOptions = Object.values(RPSGame.choiceTable)
+      let options = Object.values(RPSGame.choiceTable)
         .reduce((choices, choice) => {
           choices.push(choice.inputOptions);
           return choices;
         }, []);
-      this.move = this.getValidChoice(RPSGame.getUserInput(prompt, inputOptions));
+      this.move = this.getValidChoice(RPSGame.getUserInput(prompt, options));
     },
 
     accentTwoChars(wordArray) {
