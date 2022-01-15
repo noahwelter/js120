@@ -169,8 +169,8 @@ const RPSGame = {
   },
 
   chooseMoves() {
-    this.human.choose();
-    this.computer.choose();
+    this.human.chooseMove();
+    this.computer.chooseMove();
   },
 
   createNewMatch() {
@@ -246,7 +246,7 @@ function createComputer() {
     winScore: {},
     winTolerance: 2,
 
-    choose() {
+    chooseMove() {
       let mostWins = Math.max(...Object.values(this.winScore));
       let choices = Object.keys(this.winScore).filter(choice => {
         return this.winScore[choice] >= mostWins - this.winTolerance;
@@ -261,10 +261,11 @@ function createComputer() {
     },
 
     updateWinScore() {
+      const WIN_BONUS = 1;
       const LOSS_PENALTY = 2;
 
       this.winScore[this.move] +=
-        this.won ? 1 : -(LOSS_PENALTY * RPSGame.human.won);
+        this.won ? WIN_BONUS : -(LOSS_PENALTY * RPSGame.human.won);
     },
   };
 
@@ -276,7 +277,7 @@ function createHuman() {
   let playerObject = createPlayer();
 
   let humanObject = {
-    choose() {
+    chooseMove() {
       let choicesList = this.accentTwoChars(Object.keys(RPSGame.choiceTable));
       let prompt = `Please choose ${choicesList}:`;
       let options = Object.values(RPSGame.choiceTable)
