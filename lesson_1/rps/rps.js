@@ -4,6 +4,7 @@ const RPSGame = {
   human: createHuman(),
   computer: createComputer(),
   winningScore: 5,
+  matchNumber: 0,
   matchWinner: null,
   choiceTable: {
     rock: {
@@ -45,8 +46,8 @@ const RPSGame = {
       `│                                                     │\n` +
       `╰─────────────────────────────────────────────────────╯\n`
     );
-    console.log('Rules:');
 
+    console.log('Rules:');
     for (let choice in this.choiceTable) {
       console.log(`  • ${choice.toUpperCase()} beats ${this.choiceTable[choice].beats.join(', ').toUpperCase()}`);
     }
@@ -103,6 +104,11 @@ const RPSGame = {
     console.log(this.human.won ? `You won!` : `The computer won!`);
   },
 
+  updateMoveHistory() {
+    this.human.moveHistory[this.matchNumber].push(this.human.move);
+    this.computer.moveHistory[this.matchNumber].push(this.computer.move);
+  },
+
   updatePoints() {
     if (this.human.won) this.human.points += 1;
     if (this.computer.won) this.computer.points += 1;
@@ -115,11 +121,6 @@ const RPSGame = {
 
   resetMatchWinner() {
     this.matchWinner = null;
-  },
-
-  updateMoveHistory() {
-    this.human.moveHistory.push(this.human.move);
-    this.computer.moveHistory.push(this.computer.move);
   },
 
   setGameWinner() {
@@ -149,10 +150,10 @@ const RPSGame = {
     let userInput = readline.question().toLowerCase();
     let formattedOptions = inputOptions.map(choice => {
       return `\n  • ${choice.at(-1).toUpperCase()}: ${choice.join('/')}`;
-    });
+    }).join('');
 
     while (!inputOptions.flat().includes(userInput)) {
-      console.log(`\n'${userInput}' is not a valid choice. Please enter one of the following: ${formattedOptions.join('')}`);
+      console.log(`\n'${userInput}' is not a valid choice. Please enter one of the following: ${formattedOptions}`);
       userInput = readline.question().toLowerCase();
     }
 
@@ -172,6 +173,15 @@ const RPSGame = {
     this.computer.choose();
   },
 
+  createNewMatch() {
+    this.resetPoints();
+    this.resetMatchWinner();
+    this.matchNumber += 1;
+    this.computer.initializeWinScore();
+    this.human.moveHistory[this.matchNumber] = [];
+    this.computer.moveHistory[this.matchNumber] = [];
+  },
+
   playGame() {
     this.displayMoveHistory();
     this.chooseMoves();
@@ -184,11 +194,10 @@ const RPSGame = {
 
   playMatch() {
     this.displayWelcomeMessage();
-    this.computer.initializeWinScore();
 
     do {
-      this.resetPoints();
-      this.resetMatchWinner();
+      this.createNewMatch();
+
       while (!this.matchWinner) {
         this.playGame();
         this.setMatchWinner();
@@ -201,10 +210,11 @@ const RPSGame = {
   },
 };
 
+// eslint-disable-next-line max-lines-per-function
 function createPlayer() {
   return {
     move: null,
-    moveHistory: [],
+    moveHistory: {},
     points: 0,
     won: false,
 
@@ -217,9 +227,13 @@ function createPlayer() {
 
     getFormattedMoves() {
       const MOVES_TO_DISPLAY = 5;
-      return this.moveHistory.slice(-MOVES_TO_DISPLAY).map(move => {
-        return move.slice(0, 2);
-      }).reverse().join(' │ ');
+      const TWO_CHARACTERS = 2;
+
+      return this.moveHistory[RPSGame.matchNumber]
+        .slice(-MOVES_TO_DISPLAY)
+        .map(move => {
+          return move.slice(0, TWO_CHARACTERS);
+        }).reverse().join(' │ ');
     },
   };
 }
@@ -247,7 +261,10 @@ function createComputer() {
     },
 
     updateWinScore() {
-      this.winScore[this.move] += this.won ? 1 : -(2 * RPSGame.human.won);
+      const LOSS_PENALTY = 2;
+
+      this.winScore[this.move] +=
+        this.won ? 1 : -(LOSS_PENALTY * RPSGame.human.won);
     },
   };
 
@@ -267,6 +284,7 @@ function createHuman() {
           choices.push(choice.inputOptions);
           return choices;
         }, []);
+
       this.move = this.getValidChoice(RPSGame.getUserInput(prompt, options));
     },
 
