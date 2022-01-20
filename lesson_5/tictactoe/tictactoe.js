@@ -74,6 +74,10 @@ class Board {
     return keys.filter(key => this.squares[key].isUnused());
   }
 
+  isUnusedSquare(key) {
+    return this.squares[key].isUnused();
+  }
+
   isFull() {
     return this.unusedSquares().length === 0;
   }
@@ -205,14 +209,35 @@ class TTTGame {
   }
 
   computerMoves() {
-    let validChoices = this.board.unusedSquares();
-    let choice;
+    let choice = this.defensiveComputerMove();
 
-    do {
-      choice = Math.floor((9 * Math.random()) + 1).toString();
-    } while (!validChoices.includes(choice));
+    if (!choice) {
+      let validChoices = this.board.unusedSquares();
+
+      do {
+        choice = Math.floor((9 * Math.random()) + 1).toString();
+      } while (!validChoices.includes(choice));
+    }
 
     this.board.markSquareAt(choice, this.computer.getMarker());
+  }
+
+  defensiveComputerMove() {
+    for (let row of TTTGame.POSSIBLE_WINNING_ROWS) {
+      let key = this.atRiskSquare(row);
+      if (key) return key;
+    }
+
+    return null;
+  }
+
+  atRiskSquare(row) {
+    if (this.board.countMarkersFor(this.human, row) === 2) {
+      let key = row.find(key => this.board.isUnusedSquare(key));
+      if (key) return key;
+    }
+
+    return null;
   }
 
   isWinner(player) {
