@@ -118,6 +118,12 @@ class TTTGame {
     this.computer = new Computer();
   }
 
+  static joinOr(arr, punctuation = ', ', conjunction = 'or') {
+    return arr.length < 2 ?
+      arr.join('') :
+      `${arr.slice(0, arr.length - 1).join(punctuation)} ${conjunction} ${arr.slice(-1)}`;
+  }
+
   play() {
     console.clear();
     this.displayWelcomeMessage();
@@ -156,7 +162,7 @@ class TTTGame {
 
     while (true) {
       let validChoices = this.board.unusedSquares();
-      const prompt = `Choose a square (${validChoices.join(', ')}): `;
+      const prompt = `Choose a square (${TTTGame.joinOr(validChoices)}): `;
       choice = readline.question(prompt);
 
       if (validChoices.includes(choice)) {
