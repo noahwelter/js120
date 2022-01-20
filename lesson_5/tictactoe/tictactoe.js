@@ -211,14 +211,8 @@ class TTTGame {
   computerMoves() {
     let choice = this.offensiveComputerMove();
     if (!choice) choice = this.defensiveComputerMove();
-
-    if (!choice) {
-      let validChoices = this.board.unusedSquares();
-
-      do {
-        choice = Math.floor((9 * Math.random()) + 1).toString();
-      } while (!validChoices.includes(choice));
-    }
+    if (!choice) choice = this.centerSquareComputerMove();
+    if (!choice) choice = this.randomSquareComputerMove();
 
     this.board.markSquareAt(choice, this.computer.getMarker());
   }
@@ -229,6 +223,22 @@ class TTTGame {
 
   offensiveComputerMove() {
     return this.findCriticalSquare(this.computer);
+  }
+
+  centerSquareComputerMove() {
+    const CENTER_SQUARE = 5;
+    return this.board.isUnusedSquare(CENTER_SQUARE) ? CENTER_SQUARE : null;
+  }
+
+  randomSquareComputerMove() {
+    let choice;
+    let validChoices = this.board.unusedSquares();
+
+    do {
+      choice = Math.floor((9 * Math.random()) + 1).toString();
+    } while (!validChoices.includes(choice));
+
+    return choice;
   }
 
   findCriticalSquare(player) {
