@@ -26,12 +26,20 @@ class Square {
   }
 }
 
+class Scoreboard {
+  constructor() {
+
+  }
+
+  display() {
+    console.clear();
+    console.log('Human vs. Computer');
+  }
+}
+
 class Board {
   constructor() {
-    this.squares = {};
-    for (let square = 1; square <= 9; square += 1) {
-      this.squares[square] = new Square();
-    }
+    this.reset();
   }
 
   display() {
@@ -50,10 +58,11 @@ class Board {
 `);
   }
 
-  displayWithClear() {
-    console.clear();
-    console.log(`\n\n`);
-    this.display();
+  reset() {
+    this.squares = {};
+    for (let square = 1; square <= 9; square += 1) {
+      this.squares[square] = new Square();
+    }
   }
 
   markSquareAt(key, marker) {
@@ -113,6 +122,7 @@ class TTTGame {
   ];
 
   constructor() {
+    this.scoreboard = new Scoreboard();
     this.board = new Board();
     this.human = new Human();
     this.computer = new Computer();
@@ -125,36 +135,55 @@ class TTTGame {
   }
 
   play() {
-    console.clear();
     this.displayWelcomeMessage();
 
-    while (true) {
-      this.board.display();
+    do {
+      this.playGame();
+    } while (this.playAgain());
 
+    this.displayGoodbyeMessage();
+  }
+
+  playGame() {
+    this.board.reset();
+
+    while (true) {
+      this.scoreboard.display();
+      this.board.display();
       this.humanMoves();
       if (this.gameOver()) break;
 
       this.computerMoves();
       if (this.gameOver()) break;
-      console.clear();
-      console.log();
     }
 
     this.displayResults();
-    this.displayGoodbyeMessage();
+  }
+
+  playAgain() {
+    const LIMIT = ['Y', 'y', 'N', 'n'];
+    const READLINE_OPTIONS = {
+      limit: LIMIT,
+      limitMessage: `Please enter one of the following options: ${TTTGame.joinOr(LIMIT)}`
+    };
+
+    return readline.question('Would you like to play again? (y/n): ', READLINE_OPTIONS) === 'y';
   }
 
   displayWelcomeMessage() {
     console.clear();
     console.log(`Welcome to Tic Tac Toe!`);
+    readline.question(`\nPress ENTER to continue...`, {hideEchoBack: true, mask: ''});
   }
 
   displayGoodbyeMessage() {
-    console.log('Thanks for playing Tic Tac Toe! Goodbye!');
+    console.clear();
+    console.log('Thanks for playing Tic Tac Toe. Goodbye!\n');
   }
 
   displayResults() {
-
+    this.scoreboard.display();
+    this.board.display();
   }
 
   humanMoves() {
@@ -186,18 +215,18 @@ class TTTGame {
     this.board.markSquareAt(choice, this.computer.getMarker());
   }
 
-  gameOver() {
-    return this.board.isFull() || this.someoneWon();
+  isWinner(player) {
+    return TTTGame.POSSIBLE_WINNING_ROWS.some(row => {
+      return this.board.countMarkersFor(player, row) === 3;
+    });
   }
 
   someoneWon() {
     return this.isWinner(this.human) || this.isWinner(this.computer);
   }
 
-  isWinner(player) {
-    return TTTGame.POSSIBLE_WINNING_ROWS.some(row => {
-      return this.board.countMarkersFor(player, row) === 3;
-    });
+  gameOver() {
+    return this.board.isFull() || this.someoneWon();
   }
 }
 
