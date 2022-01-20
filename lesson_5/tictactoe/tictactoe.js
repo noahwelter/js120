@@ -209,7 +209,8 @@ class TTTGame {
   }
 
   computerMoves() {
-    let choice = this.defensiveComputerMove();
+    let choice = this.offensiveComputerMove();
+    if (!choice) choice = this.defensiveComputerMove();
 
     if (!choice) {
       let validChoices = this.board.unusedSquares();
@@ -223,16 +224,24 @@ class TTTGame {
   }
 
   defensiveComputerMove() {
+    return this.findCriticalSquare(this.human);
+  }
+
+  offensiveComputerMove() {
+    return this.findCriticalSquare(this.computer);
+  }
+
+  findCriticalSquare(player) {
     for (let row of TTTGame.POSSIBLE_WINNING_ROWS) {
-      let key = this.atRiskSquare(row);
+      let key = this.criticalSquare(row, player);
       if (key) return key;
     }
 
     return null;
   }
 
-  atRiskSquare(row) {
-    if (this.board.countMarkersFor(this.human, row) === 2) {
+  criticalSquare(row, player) {
+    if (this.board.countMarkersFor(player, row) === 2) {
       let key = row.find(key => this.board.isUnusedSquare(key));
       if (key) return key;
     }
