@@ -173,6 +173,8 @@ class TTTGame {
     this.computer = new Computer();
     this.scoreboard = new Scoreboard(this.human, this.computer);
     this.board = new Board();
+    this.firstPlayer = this.human;
+    this.currentPlayer = null;
   }
 
   static joinOr(arr, punctuation = ', ', conjunction = 'or') {
@@ -189,20 +191,21 @@ class TTTGame {
 
   playGame() {
     this.board.reset();
+    this.currentPlayer = this.firstPlayer;
 
     while (true) {
       this.scoreboard.display();
       this.board.display();
 
-      this.humanMoves();
+      this.playerMoves();
       if (this.gameOver()) break;
 
-      this.computerMoves();
-      if (this.gameOver()) break;
+      this.switchCurrentPlayer();
     }
 
     this.updateMatchScore();
     this.displayGameResults();
+    this.switchFirstPlayer();
   }
 
   playMatch() {
@@ -220,6 +223,18 @@ class TTTGame {
   updateMatchScore() {
     if (this.isGameWinner(this.human)) this.human.incrementScore();
     if (this.isGameWinner(this.computer)) this.computer.incrementScore();
+  }
+
+  switchPlayer(player) {
+    return player === this.human ? this.computer : this.human;
+  }
+
+  switchFirstPlayer() {
+    this.firstPlayer = this.switchPlayer(this.firstPlayer);
+  }
+
+  switchCurrentPlayer() {
+    this.currentPlayer = this.switchPlayer(this.currentPlayer);
   }
 
   displayWelcomeMessage() {
@@ -268,6 +283,11 @@ class TTTGame {
       message = `≜ The match ends in a tie.`;
     }
     readline.question(`${message} Press ENTER to continue... `, {hideEchoBack: true, mask: ''});
+  }
+
+  playerMoves() {
+    if (this.currentPlayer === this.human) this.humanMoves();
+    else this.computerMoves();
   }
 
   humanMoves() {
@@ -336,16 +356,6 @@ class TTTGame {
     return null;
   }
 
-  isGameWinner(player) {
-    return TTTGame.POSSIBLE_WINNING_ROWS.some(row => {
-      return this.board.countMarkersFor(player, row) === TTTGame.SQUARES_TO_WIN;
-    });
-  }
-
-  isMatchWinner(player) {
-    return player.getScore() === TTTGame.WINNING_SCORE;
-  }
-
   getGameWinner() {
     if (this.isGameWinner(this.human)) return this.human;
     if (this.isGameWinner(this.computer)) return this.computer;
@@ -358,6 +368,16 @@ class TTTGame {
     if (this.human.score < this.computer.score) return this.computer;
 
     return null;
+  }
+
+  isGameWinner(player) {
+    return TTTGame.POSSIBLE_WINNING_ROWS.some(row => {
+      return this.board.countMarkersFor(player, row) === TTTGame.SQUARES_TO_WIN;
+    });
+  }
+
+  isMatchWinner(player) {
+    return player.getScore() === TTTGame.WINNING_SCORE;
   }
 
   gameOver() {
