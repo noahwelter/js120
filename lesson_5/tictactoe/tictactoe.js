@@ -36,16 +36,17 @@ class Scoreboard {
     console.clear();
     console.log(
       `╭─────────────────┬────────────────╮
-│     You:  ${this.human.getScore()}     │  Computer:  ${this.computer.getScore()}  │
+│     ${this.human}:  ${this.human.getScore()}     │  ${this.computer}:  ${this.computer.getScore()}  │
 ╰─────────────────┴────────────────╯`);
   }
 }
 
 class Message {
   static MESSAGE_LENGTH = 23;
-  constructor(message = {firstLine: '', secondLine: ''}) {
-    this.firstLine = message.firstLine;
-    this.secondLine = message.secondLine;
+
+  constructor(message = {}) {
+    this.firstLine = message.firstLine || '';
+    this.secondLine = message.secondLine || '';
   }
 
   display() {
@@ -138,7 +139,7 @@ class Player {
 }
 
 class Human extends Player {
-  static NAME = "You";
+  static NAME = 'You';
 
   constructor() {
     super(Square.HUMAN_MARKER, Human.NAME);
@@ -146,7 +147,7 @@ class Human extends Player {
 }
 
 class Computer extends Player {
-  static NAME = "Computer";
+  static NAME = 'Computer';
 
   constructor() {
     super(Square.COMPUTER_MARKER, Computer.NAME);
@@ -154,6 +155,7 @@ class Computer extends Player {
 }
 
 class TTTGame {
+  static SQUARES_TO_WIN = 3;
   static WINNING_SCORE = 3;
   static POSSIBLE_WINNING_ROWS = [
     [ '1', '2', '3' ],            // top row of board
@@ -191,6 +193,7 @@ class TTTGame {
     while (true) {
       this.scoreboard.display();
       this.board.display();
+
       this.humanMoves();
       if (this.gameOver()) break;
 
@@ -260,15 +263,14 @@ class TTTGame {
     let message;
 
     if (this.getMatchWinner()) {
-      message = `${this.getMatchWinner()} won the match!`;
+      message = `★ ${this.getMatchWinner()} won the match!`;
     } else {
-      message = `The match ends in a tie.`;
+      message = `≜ The match ends in a tie.`;
     }
     readline.question(`${message} Press ENTER to continue... `, {hideEchoBack: true, mask: ''});
   }
 
   humanMoves() {
-    let choice;
     let validChoices = this.board.unusedSquares();
     const prompt = `Choose a square (${TTTGame.joinOr(validChoices)}): `;
     const READLINE_OPTIONS = {
@@ -276,7 +278,7 @@ class TTTGame {
       limitMessage: `\nSorry, that's not a valid choice.\n`,
     };
 
-    choice = readline.question(prompt, READLINE_OPTIONS);
+    let choice = readline.question(prompt, READLINE_OPTIONS);
 
     this.board.markSquareAt(choice, this.human.getMarker());
   }
@@ -290,12 +292,12 @@ class TTTGame {
     this.board.markSquareAt(choice, this.computer.getMarker());
   }
 
-  defensiveComputerMove() {
-    return this.findCriticalSquare(this.human);
-  }
-
   offensiveComputerMove() {
     return this.findCriticalSquare(this.computer);
+  }
+
+  defensiveComputerMove() {
+    return this.findCriticalSquare(this.human);
   }
 
   centerSquareComputerMove() {
@@ -324,7 +326,9 @@ class TTTGame {
   }
 
   criticalSquare(row, player) {
-    if (this.board.countMarkersFor(player, row) === 2) {
+    const CRITICAL_RUN = TTTGame.SQUARES_TO_WIN - 1;
+
+    if (this.board.countMarkersFor(player, row) === CRITICAL_RUN) {
       let key = row.find(key => this.board.isUnusedSquare(key));
       if (key) return key;
     }
@@ -334,7 +338,7 @@ class TTTGame {
 
   isGameWinner(player) {
     return TTTGame.POSSIBLE_WINNING_ROWS.some(row => {
-      return this.board.countMarkersFor(player, row) === 3;
+      return this.board.countMarkersFor(player, row) === TTTGame.SQUARES_TO_WIN;
     });
   }
 
