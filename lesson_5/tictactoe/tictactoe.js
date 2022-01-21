@@ -1,11 +1,11 @@
 let readline = require('readline-sync');
 
 class Square {
-  static UNUSED_SQUARE = ' ';
+  static UNUSED_MARKER = ' ';
   static HUMAN_MARKER = '⨯';
   static COMPUTER_MARKER = '○';
 
-  constructor(marker = Square.UNUSED_SQUARE) {
+  constructor(marker = Square.UNUSED_MARKER) {
     this.marker = marker;
   }
 
@@ -22,7 +22,7 @@ class Square {
   }
 
   isUnused() {
-    return this.marker === Square.UNUSED_SQUARE;
+    return this.marker === Square.UNUSED_MARKER;
   }
 }
 
