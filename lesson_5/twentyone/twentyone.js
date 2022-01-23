@@ -38,24 +38,10 @@ class Message {
 }
 
 class Card {
-  static LOW_ACE_POINTS = 1;
-  static HIGH_ACE_POINTS = 11;
-  static ACE_POINT_DIFFERENTIAL = Card.HIGH_ACE_POINTS - Card.LOW_ACE_POINTS;
-
   constructor(suit, rank) {
     this.suit = suit;
     this.rank = rank;
-    this.setPoints();
-    this.setAceHigh();
     this.hidden = false;
-  }
-
-  getAceHigh() {
-    return this.aceHigh;
-  }
-
-  getPoints() {
-    return this.points;
   }
 
   getRank() {
@@ -66,37 +52,24 @@ class Card {
     return this.suit;
   }
 
-  setAceHigh(status = true) {
-    if (this.isAce()) this.aceHigh = status;
-  }
-
-  setAceLow() {
-    if (this.isAce()) {
-      this.aceHigh = false;
-      this.points = Card.LOW_ACE_POINTS;
-    }
-  }
-
-  setPoints() {
-    const ROYALTY_POINTS = 10;
-
-    if (this.isRoyalty()) this.points = ROYALTY_POINTS;
-    else if (this.isAce()) this.points = Card.HIGH_ACE_POINTS;
-    else this.points = Number(this.getRank());
-  }
-
   isAce() {
-    const ACE = 'A';
-    return this.getRank() === ACE;
+    return this.getRank() === 'A';
   }
 
-  isAceHigh() {
-    return this.isAce() && this.getAceHigh();
+  isKing() {
+    return this.getRank() === 'K';
+  }
+
+  isQueen() {
+    return this.getRank() === 'Q';
+  }
+
+  isJack() {
+    return this.getRank() === 'J';
   }
 
   isRoyalty() {
-    const ROYALTY_RANKS = ['J', 'Q', 'K'];
-    return ROYALTY_RANKS.includes(this.getRank());
+    return this.isJack() || this.isQueen() || this.isKing();
   }
 
   isHidden() {
@@ -118,10 +91,10 @@ class Deck {
   static RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
   constructor() {
-    this.createNewDeck();
+    this.reset();
   }
 
-  createNewDeck() {
+  reset() {
     this.cards = [];
 
     for (let suit of Deck.SUITS) {
@@ -143,17 +116,17 @@ class Deck {
 }
 
 let Score = {
+  resetScore() {
+    this.score = 0;
+    this.hidden = false;
+  },
+
   getScore() {
     return this.score;
   },
 
   setScore(score) {
     this.score = score;
-  },
-
-  resetScore() {
-    this.score = 0;
-    this.hidden = false;
   },
 
   isHidden() {
@@ -175,16 +148,12 @@ let Score = {
 };
 
 let Hand = {
-  getHand() {
-    return this.hand;
-  },
-
-  getLastCardDealt() {
-    return this.hand.at(-1);
-  },
-
   resetHand() {
     this.hand = [];
+  },
+
+  getHand() {
+    return this.hand;
   },
 
   hideCard(cardNumber) {
@@ -260,12 +229,11 @@ class Player extends Participant {
     return this.dollars === Player.WINNING_DOLLARS;
   }
 
-
-  lostBet() {
+  losesBet() {
     this.dollars -= 1;
   }
 
-  wonBet() {
+  winsBet() {
     this.dollars += 1;
   }
 
@@ -319,6 +287,11 @@ class TwentyOneGame {
   static CARDS_IN_INITIAL_HAND = 2;
   static TARGET_SCORE = 21;
   static HIDDEN_CARD_NUMBER = 2;
+  static ROYALTY_POINTS = 10;
+  static ACE_HIGH_POINTS = 11;
+  static ACE_LOW_POINTS = 1;
+  static ACE_POINT_DIFFERENTIAL =
+    TwentyOneGame.ACE_HIGH_POINTS - TwentyOneGame.ACE_LOW_POINTS;
 
   constructor() {
     this.deck = new Deck();
@@ -353,7 +326,7 @@ class TwentyOneGame {
   }
 
   setUpTable() {
-    this.deck.createNewDeck();
+    this.deck.reset();
     this.player.resetHand();
     this.dealer.resetHand();
     this.player.resetScore();
@@ -401,26 +374,30 @@ class TwentyOneGame {
     }
   }
 
-  updateScore(player) {
-    let card = player.getLastCardDealt();
-
-    player.setScore(player.getScore() + card.getPoints());
-    this.updateScoreWithAces(player);
-  }
-
-  updateScoreWithAces(player) {
-    let highAces = player.getHand().filter(card => card.isAceHigh());
-
-    while (player.getScore() > TwentyOneGame.TARGET_SCORE && highAces.length) {
-      let ace = highAces.pop();
-      ace.setAceLow();
-      player.setScore(player.getScore() - (Card.ACE_POINT_DIFFERENTIAL));
-    }
-  }
-
   settleUp() {
-    if (this.isWinner(this.player)) this.player.wonBet();
-    else if (this.isWinner(this.dealer)) this.player.lostBet();
+    if (this.isWinner(this.player)) this.player.winsBet();
+    else if (this.isWinner(this.dealer)) this.player.losesBet();
+  }
+
+  getCardPoints(card) {
+    if (card.isRoyalty()) return TwentyOneGame.ROYALTY_POINTS;
+    else if (card.isAce()) return TwentyOneGame.ACE_HIGH_POINTS;
+    else return Number(card.getRank());
+  }
+
+  updateScore(player) {
+    let aces = player.getHand().filter(card => card.isAce());
+    let score = player.getHand().reduce((score, card) => {
+      score += this.getCardPoints(card);
+      return score;
+    }, 0);
+
+    while (score > TwentyOneGame.TARGET_SCORE && aces.length) {
+      score -= TwentyOneGame.ACE_POINT_DIFFERENTIAL;
+      aces.pop();
+    }
+
+    player.setScore(score);
   }
 
   getBusted() {
@@ -455,9 +432,8 @@ class TwentyOneGame {
       'Welcome to 21.',
       'Good luck!',
     ];
-    let message = new Message(WELCOME_MESSAGE);
 
-    message.displayFull();
+    new Message(WELCOME_MESSAGE).displayFull();
     this.waitForEnter();
   }
 
@@ -466,10 +442,9 @@ class TwentyOneGame {
       `${this.getWinner().getName()} won!` :
       `It's a tie.`;
     let bustMessage = this.getBusted() ? ` ${this.getBusted().getName()} busted.` : ``;
-    let message = new Message(result + bustMessage);
 
     this.displayTable();
-    message.displaySingleLine('🃟');
+    new Message(result + bustMessage).displaySingleLine('🃟');
   }
 
   displayCommentOnWealth() {
@@ -503,9 +478,8 @@ class TwentyOneGame {
       'Thanks for playing 21!',
       'Goodbye.',
     ];
-    let message = new Message(GOODBYE_MESSAGE);
 
-    message.displayFull();
+    new Message(GOODBYE_MESSAGE).displayFull();
   }
 
   waitForEnter() {
