@@ -260,7 +260,7 @@ class Player extends Participant {
   }
 
   choosesToHit() {
-    const QUESTION = 'Hit or stay?';
+    const QUESTION = '\nHit or stay?';
     return this.askBool(QUESTION, 'h', 's');
   }
 
