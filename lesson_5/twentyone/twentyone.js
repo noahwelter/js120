@@ -297,10 +297,8 @@ class Dealer extends Participant {
   }
 }
 
-Object.assign(Player.prototype, Hand);
-Object.assign(Player.prototype, Score);
-Object.assign(Dealer.prototype, Hand);
-Object.assign(Dealer.prototype, Score);
+Object.assign(Player.prototype, Hand, Score);
+Object.assign(Dealer.prototype, Hand, Score);
 
 class TwentyOneGame {
   static CARDS_IN_INITIAL_HAND = 2;
