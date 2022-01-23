@@ -190,6 +190,8 @@ let Hand = {
 };
 
 class Participant {
+  static TARGET_SCORE = 21;
+
   constructor() {
     this.name = null;
     Object.assign(this, Hand);
@@ -200,6 +202,10 @@ class Participant {
 
   getName() {
     return this.name;
+  }
+
+  isBusted() {
+    return this.getScore() > Participant.TARGET_SCORE;
   }
 }
 
@@ -237,6 +243,14 @@ class Player extends Participant {
     this.dollars += 1;
   }
 
+  lostMoney() {
+    return this.getWinnings() < 0;
+  }
+
+  wonMoney() {
+    return this.getWinnings() > 0;
+  }
+
   askBool(question, trueKeyIn = 'y', falseKeyIn = 'n') {
     const READLINE_OPTIONS = {
       limit: trueKeyIn + falseKeyIn,
@@ -265,6 +279,9 @@ class Player extends Participant {
 }
 
 class Dealer extends Participant {
+  static DEALER_HIT_SCORE_THRESHOLD = 17;
+  static HIDDEN_CARD_NUMBER = 2;
+
   constructor(deck) {
     super();
     this.deck = deck;
@@ -273,8 +290,7 @@ class Dealer extends Participant {
   }
 
   isBelowScoreThreshold() {
-    const DEALER_HIT_SCORE_THRESHOLD = 17;
-    return this.score < DEALER_HIT_SCORE_THRESHOLD;
+    return this.score < Dealer.DEALER_HIT_SCORE_THRESHOLD;
   }
 
   dealCard(player) {
@@ -285,8 +301,6 @@ class Dealer extends Participant {
 
 class TwentyOneGame {
   static CARDS_IN_INITIAL_HAND = 2;
-  static TARGET_SCORE = 21;
-  static HIDDEN_CARD_NUMBER = 2;
   static ROYALTY_POINTS = 10;
   static ACE_HIGH_POINTS = 11;
   static ACE_LOW_POINTS = 1;
@@ -337,12 +351,12 @@ class TwentyOneGame {
   dealCards() {
     for (let card = 0; card < TwentyOneGame.CARDS_IN_INITIAL_HAND; card += 1) {
       this.dealer.dealCard(this.dealer);
-      this.updateScore(this.dealer);
+      this.dealer.setScore(this.calculateScore(this.dealer));
       this.dealer.dealCard(this.player);
-      this.updateScore(this.player);
+      this.player.setScore(this.calculateScore(this.player));
     }
 
-    this.dealer.hideCard(TwentyOneGame.HIDDEN_CARD_NUMBER);
+    this.dealer.hideCard(Dealer.HIDDEN_CARD_NUMBER);
   }
 
   displayTable() {
@@ -355,21 +369,21 @@ class TwentyOneGame {
   }
 
   playerTurn() {
-    while (!this.isBusted(this.player) && this.player.choosesToHit()) {
+    while (!this.player.isBusted() && this.player.choosesToHit()) {
       this.dealer.dealCard(this.player);
-      this.updateScore(this.player);
+      this.player.setScore(this.calculateScore(this.player));
       this.displayTable();
     }
   }
 
   dealerTurn() {
     this.dealer.unhideScore();
-    this.dealer.unhideCard(TwentyOneGame.HIDDEN_CARD_NUMBER);
+    this.dealer.unhideCard(Dealer.HIDDEN_CARD_NUMBER);
     this.displayTable();
 
-    while (!this.isBusted(this.player) && this.dealer.isBelowScoreThreshold()) {
+    while (!this.player.isBusted() && this.dealer.isBelowScoreThreshold()) {
       this.dealer.dealCard(this.dealer);
-      this.updateScore(this.dealer);
+      this.dealer.setScore(this.calculateScore(this.dealer));
       this.displayTable();
     }
   }
@@ -385,31 +399,31 @@ class TwentyOneGame {
     else return Number(card.getRank());
   }
 
-  updateScore(player) {
-    let aces = player.getHand().filter(card => card.isAce());
+  calculateScore(player) {
+    let aceCount = player.getHand().filter(card => card.isAce()).length;
     let score = player.getHand().reduce((score, card) => {
       score += this.getCardPoints(card);
       return score;
     }, 0);
 
-    while (score > TwentyOneGame.TARGET_SCORE && aces.length) {
+    while (score > Participant.TARGET_SCORE && aceCount > 0) {
       score -= TwentyOneGame.ACE_POINT_DIFFERENTIAL;
-      aces.pop();
+      aceCount -= 1;
     }
 
-    player.setScore(score);
+    return score;
   }
 
   getBusted() {
-    if (this.isBusted(this.player)) return this.player;
-    else if (this.isBusted(this.dealer)) return this.dealer;
+    if (this.player.isBusted()) return this.player;
+    else if (this.dealer.isBusted()) return this.dealer;
     else return null;
   }
 
   getWinner() {
-    if (this.isBusted(this.player)) {
+    if (this.player.isBusted()) {
       return this.dealer;
-    } else if (this.isBusted(this.dealer)) {
+    } else if (this.dealer.isBusted()) {
       return this.player;
     } else if (this.player.getScore() === this.dealer.getScore()) {
       return null;
@@ -419,12 +433,8 @@ class TwentyOneGame {
     }
   }
 
-  isBusted(player) {
-    return player.getScore() > TwentyOneGame.TARGET_SCORE;
-  }
-
   isWinner(player) {
-    return (player === this.getWinner());
+    return player === this.getWinner();
   }
 
   displayWelcomeMessage() {
@@ -460,11 +470,11 @@ class TwentyOneGame {
   displayGoodbyeMessage() {
     let result = `${this.player.getName()} `;
 
-    if (this.player.getWinnings() > 0) result += 'won';
-    else if (this.player.getWinnings() < 0) result += 'lost';
+    if (this.player.wonMoney()) result += 'won';
+    else if (this.player.lostMoney()) result += 'lost';
     else result += 'broke even';
 
-    let winnings = Math.abs(this.player.getWinnings()) || '';
+    let winnings = Math.abs(this.player.getWinnings());
     let firstLine = `${result}${winnings ? ` $${winnings}` : ''}.`;
     let secondLine;
 
