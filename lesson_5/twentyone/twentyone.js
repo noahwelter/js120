@@ -194,8 +194,6 @@ class Participant {
 
   constructor() {
     this.name = null;
-    Object.assign(this, Hand);
-    Object.assign(this, Score);
     this.resetHand();
     this.resetScore();
   }
@@ -298,6 +296,11 @@ class Dealer extends Participant {
     player.hand.push(card);
   }
 }
+
+Object.assign(Player.prototype, Hand);
+Object.assign(Player.prototype, Score);
+Object.assign(Dealer.prototype, Hand);
+Object.assign(Dealer.prototype, Score);
 
 class TwentyOneGame {
   static CARDS_IN_INITIAL_HAND = 2;
