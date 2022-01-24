@@ -252,9 +252,11 @@ class Player extends Participant {
   askBool(question, trueKeyIn = 'y', falseKeyIn = 'n') {
     const READLINE_OPTIONS = {
       limit: trueKeyIn + falseKeyIn,
+      trueValue: [trueKeyIn],
+      falseValue: [falseKeyIn],
     };
 
-    return readline.keyIn(`${question} [${trueKeyIn}/${falseKeyIn}]: `, READLINE_OPTIONS) === trueKeyIn;
+    return readline.keyIn(`${question} [${trueKeyIn}/${falseKeyIn}]: `, READLINE_OPTIONS);
   }
 
   choosesToHit() {
