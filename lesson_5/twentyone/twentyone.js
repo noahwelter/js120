@@ -130,7 +130,7 @@ let Score = {
   },
 
   isHidden() {
-    return this.hidden === true;
+    return this.hidden;
   },
 
   hideScore() {
